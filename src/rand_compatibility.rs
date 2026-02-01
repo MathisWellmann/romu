@@ -2,7 +2,7 @@
 
 use crate::Rng;
 
-impl rand_core::RngCore for Rng {
+impl rand_core::Rng for Rng {
     fn next_u32(&mut self) -> u32 {
         self.u32()
     }

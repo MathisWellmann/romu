@@ -14,7 +14,7 @@ rust-version = "1.74"
 
 [dependencies]
 getrandom = { version = "0.3", optional = true }
-rand_core = { version = "0.9", optional = true }
+rand_core = { version = "0.10", optional = true }
 
 [dev-dependencies]
 criterion = "0.8"
