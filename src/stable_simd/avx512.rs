@@ -8,9 +8,9 @@ use crate::{generate_seed, split_mix_64, SeedSource};
 
 /// Implements `RomuTrio` with 512-bit width.
 pub struct RngWide {
-    x: [__m256i; 2],
-    y: [__m256i; 2],
-    z: [__m256i; 2],
+    x: __m512i,
+    y: __m512i,
+    z: __m512i,
     seed_source: SeedSource,
 }
 
@@ -18,9 +18,9 @@ impl Default for RngWide {
     fn default() -> Self {
         unsafe {
             let mut rng = Self {
-                x: [_mm256_setzero_si256(), _mm256_setzero_si256()],
-                y: [_mm256_setzero_si256(), _mm256_setzero_si256()],
-                z: [_mm256_setzero_si256(), _mm256_setzero_si256()],
+                x: _mm512_setzero_si512(),
+                y: _mm512_setzero_si512(),
+                z: _mm512_setzero_si512(),
                 seed_source: SeedSource::Fixed,
             };
             rng.seed();
@@ -48,20 +48,17 @@ impl RngWide {
         let lane6 = split_mix_64(seeds[6]);
         let lane7 = split_mix_64(seeds[7]);
 
-        assert!(size_of::<[__m256i; 2]>() == size_of::<[[u64; 4]; 2]>());
+        assert!(size_of::<__m512i>() == size_of::<[u64; 8]>());
         unsafe {
             Self {
-                x: transmute::<[[u64; 4]; 2], [__m256i; 2]>([
-                    [lane0[0], lane1[0], lane2[0], lane3[0]],
-                    [lane4[0], lane5[0], lane6[0], lane7[0]],
+                x: transmute::<[u64; 8], __m512i>([
+                    lane0[0], lane1[0], lane2[0], lane3[0], lane4[0], lane5[0], lane6[0], lane7[0],
                 ]),
-                y: transmute::<[[u64; 4]; 2], [__m256i; 2]>([
-                    [lane0[1], lane1[1], lane2[1], lane3[1]],
-                    [lane4[1], lane5[1], lane6[1], lane7[1]],
+                y: transmute::<[u64; 8], __m512i>([
+                    lane0[1], lane1[1], lane2[1], lane3[1], lane4[1], lane5[1], lane6[1], lane7[1],
                 ]),
-                z: transmute::<[[u64; 4]; 2], [__m256i; 2]>([
-                    [lane0[2], lane1[2], lane2[2], lane3[2]],
-                    [lane4[2], lane5[2], lane6[2], lane7[2]],
+                z: transmute::<[u64; 8], __m512i>([
+                    lane0[2], lane1[2], lane2[2], lane3[2], lane4[2], lane5[2], lane6[2], lane7[2],
                 ]),
                 seed_source: SeedSource::User,
             }
@@ -78,21 +75,39 @@ impl RngWide {
     /// # Notice
     /// The variables must be seeded such that at least one bit of state is non-zero.
     pub const fn from_seed_with_192bit(seeds: [[u64; 3]; 8]) -> Self {
-        assert!(size_of::<[__m256i; 2]>() == size_of::<[[u64; 4]; 2]>());
+        assert!(size_of::<__m512i>() == size_of::<[u64; 8]>());
         unsafe {
             Self {
-                x: transmute::<[[u64; 4]; 2], [__m256i; 2]>([
-                    [seeds[0][0], seeds[1][0], seeds[2][0], seeds[3][0]],
-                    [seeds[4][0], seeds[5][0], seeds[6][0], seeds[7][0]],
+                x: transmute::<[u64; 8], __m512i>([
+                    seeds[0][0],
+                    seeds[1][0],
+                    seeds[2][0],
+                    seeds[3][0],
+                    seeds[4][0],
+                    seeds[5][0],
+                    seeds[6][0],
+                    seeds[7][0],
                 ]),
-                y: transmute::<[[u64; 4]; 2], [__m256i; 2]>([
-                    [seeds[0][1], seeds[1][1], seeds[2][1], seeds[3][1]],
-                    [seeds[4][1], seeds[5][1], seeds[6][1], seeds[7][1]],
+                y: transmute::<[u64; 8], __m512i>([
+                    seeds[0][1],
+                    seeds[1][1],
+                    seeds[2][1],
+                    seeds[3][1],
+                    seeds[4][1],
+                    seeds[5][1],
+                    seeds[6][1],
+                    seeds[7][1],
                 ]),
-                z: transmute::<[[[u64; 4]; 2]; 1], [__m256i; 2]>([[
-                    [seeds[0][2], seeds[1][2], seeds[2][2], seeds[3][2]],
-                    [seeds[4][2], seeds[5][2], seeds[6][2], seeds[7][2]],
-                ]]),
+                z: transmute::<[u64; 8], __m512i>([
+                    seeds[0][2],
+                    seeds[1][2],
+                    seeds[2][2],
+                    seeds[3][2],
+                    seeds[4][2],
+                    seeds[5][2],
+                    seeds[6][2],
+                    seeds[7][2],
+                ]),
                 seed_source: SeedSource::User,
             }
         }
@@ -130,11 +145,11 @@ impl RngWide {
                 memory_address = memory_address.wrapping_add(1);
             });
 
-        assert!(size_of::<[__m256i; 2]>() == size_of::<[u64; 8]>());
+        assert!(size_of::<__m512i>() == size_of::<[u64; 8]>());
         unsafe {
-            self.x = transmute::<[u64; 8], [__m256i; 2]>(x);
-            self.y = transmute::<[u64; 8], [__m256i; 2]>(y);
-            self.z = transmute::<[u64; 8], [__m256i; 2]>(z);
+            self.x = transmute::<[u64; 8], __m512i>(x);
+            self.y = transmute::<[u64; 8], __m512i>(y);
+            self.z = transmute::<[u64; 8], __m512i>(z);
         }
 
         self.seed_source = seed_source;
@@ -155,46 +170,28 @@ impl RngWide {
 
         unsafe {
             // 0xD3833E804F4C574B
-            let high_mul = _mm256_set1_epi64x(3548593792);
-            let low_mul = _mm256_set1_epi64x(1330403147);
+            let high_mul = _mm512_set1_epi64(3548593792);
+            let low_mul = _mm512_set1_epi64(1330403147);
 
-            let zp_high = _mm256_mul_epu32(zp[0], high_mul);
-            let zp_high_shift = _mm256_srli_epi64::<32>(zp[0]);
-            let zp_mid = _mm256_mul_epu32(zp_high_shift, low_mul);
-            let zp_mid_high = _mm256_add_epi64(zp_mid, zp_high);
-            let zp_mid_high = _mm256_slli_epi64::<32>(zp_mid_high);
-            let zp_low = _mm256_mul_epu32(low_mul, zp[0]);
-            let x0 = _mm256_add_epi64(zp_low, zp_mid_high);
-            let zp_high = _mm256_mul_epu32(zp[1], high_mul);
-            let zp_high_shift = _mm256_srli_epi64::<32>(zp[1]);
-            let zp_mid = _mm256_mul_epu32(zp_high_shift, low_mul);
-            let zp_mid_high = _mm256_add_epi64(zp_mid, zp_high);
-            let zp_mid_high = _mm256_slli_epi64::<32>(zp_mid_high);
-            let zp_low = _mm256_mul_epu32(low_mul, zp[1]);
-            let x1 = _mm256_add_epi64(zp_low, zp_mid_high);
-            self.x = [x0, x1];
+            let zp_high = _mm512_mul_epu32(zp, high_mul);
+            let zp_high_shift = _mm512_srli_epi64::<32>(zp);
+            let zp_mid = _mm512_mul_epu32(zp_high_shift, low_mul);
+            let zp_mid_high = _mm512_add_epi64(zp_mid, zp_high);
+            let zp_mid_high = _mm512_slli_epi64::<32>(zp_mid_high);
+            let zp_low = _mm512_mul_epu32(low_mul, zp);
+            self.x = _mm512_add_epi64(zp_low, zp_mid_high);
 
-            let ty = _mm256_sub_epi64(yp[0], xp[0]);
-            let srl = _mm256_srli_epi64::<52>(ty);
-            let sll = _mm256_slli_epi64::<12>(ty);
-            let y0 = _mm256_or_si256(sll, srl);
-            let ty = _mm256_sub_epi64(yp[1], xp[1]);
-            let srl = _mm256_srli_epi64::<52>(ty);
-            let sll = _mm256_slli_epi64::<12>(ty);
-            let y1 = _mm256_or_si256(sll, srl);
-            self.y = [y0, y1];
+            let ty = _mm512_sub_epi64(yp, xp);
+            let srl = _mm512_srli_epi64::<52>(ty);
+            let sll = _mm512_slli_epi64::<12>(ty);
+            self.y = _mm512_or_si512(sll, srl);
 
-            let tz = _mm256_sub_epi64(zp[0], yp[0]);
-            let srl = _mm256_srli_epi64::<20>(tz);
-            let sll = _mm256_slli_epi64::<44>(tz);
-            let z0 = _mm256_or_si256(sll, srl);
-            let tz = _mm256_sub_epi64(zp[1], yp[1]);
-            let srl = _mm256_srli_epi64::<20>(tz);
-            let sll = _mm256_slli_epi64::<44>(tz);
-            let z1 = _mm256_or_si256(sll, srl);
-            self.z = [z0, z1];
+            let tz = _mm512_sub_epi64(zp, yp);
+            let srl = _mm512_srli_epi64::<20>(tz);
+            let sll = _mm512_slli_epi64::<44>(tz);
+            self.z = _mm512_or_si512(sll, srl);
 
-            assert!(size_of::<[__m256i; 2]>() == size_of::<[u64; 8]>());
+            assert!(size_of::<__m512i>() == size_of::<[u64; 8]>());
             transmute(xp)
         }
     }

@@ -53,8 +53,8 @@
 //! The crate provides a wide generator that tries to speed up the generation for large amount of
 //! random numbers by trying to utilize SIMD instructions.
 //!
-//! Handwritten NEON, SSE2 and AVX2 implementations are available. A fallback is provided but won't
-//! produce auto vectorized code.
+//! Handwritten SSE2, AVX2 and AVX-512 implementations are available. A fallback is provided
+//! but won't produce auto vectorized code.
 //!
 //! The nightly only feature `unstable_simd` uses the `core::simd` crate to implement the SIMD.
 //!
@@ -475,7 +475,7 @@ impl Rng {
     /// Generates a random bool value.
     #[inline(always)]
     pub fn bool(&self) -> bool {
-        self.next() % 2 == 0
+        self.next().is_multiple_of(2)
     }
 
     /// Generates a random f32 value in range (0..1).

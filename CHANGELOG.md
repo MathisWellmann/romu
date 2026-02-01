@@ -6,10 +6,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-02-01
+
+### Added
+
+- Added `RngWide` implementation that supports AVX-512
+
 ## Changed
 
+- Increased MSRV to 1.89 stable AVX-512 support
 - Changed `RngWide::u64x8()` return type to `u64x8` by @MathisWellmann (#6)
-- Improve performance of RngWide::fill_bytes in unstable_simd.rs by @MathisWellmann (#10)
+- Improve performance of `RngWide::fill_bytes()` in unstable_simd.rs by @MathisWellmann (#10)
 
 ### Updated
 

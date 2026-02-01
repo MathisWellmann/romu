@@ -8,9 +8,9 @@ license = "Apache-2.0"
 readme = "README.md"
 documentation = "https://docs.rs/romu"
 repository = "https://github.com/hasenbanck/romu/"
-version = "0.7.0"
+version = "0.8.0"
 edition = "2021"
-rust-version = "1.74"
+rust-version = "1.89"
 
 [dependencies]
 getrandom = { version = "0.3", optional = true }

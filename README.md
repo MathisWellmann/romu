@@ -57,28 +57,36 @@ value.
 The crate provides a wide generator that tries to speed up the generation for large amount of random numbers by trying
 to utilize SIMD instructions.
 
-Handwritten SSE2 and AVX2 implementations are available. A fallback is provided but won't produce auto
+Handwritten SSE2, AVX2, and AVX-512 implementations are available. A fallback is provided but won't produce auto
 vectorized code.
+
+SSE2 benchmark (AMR Ryzen 9959X3D with `target_cpu=x86-64-v2`):
+```
+bytes/Rng/1048576       time:   [90.718 µs 91.110 µs 91.521 µs]
+                        thrpt:  [10.670 GiB/s 10.719 GiB/s 10.765 GiB/s]
+bytes/RngWide/1048576   time:   [57.818 µs 57.904 µs 58.009 µs]
+                        thrpt:  [16.835 GiB/s 16.865 GiB/s 16.890 GiB/s]
+```
+
+AVX2 benchmark (AMR Ryzen 9959X3D with `target_cpu=x86-64-v3`):
+```
+bytes/Rng/1048576       time:   [63.559 µs 63.647 µs 63.744 µs]
+                        thrpt:  [15.320 GiB/s 15.344 GiB/s 15.365 GiB/s]
+bytes/RngWide/1048576   time:   [33.331 µs 33.387 µs 33.446 µs]
+                        thrpt:  [29.198 GiB/s 29.250 GiB/s 29.299 GiB/s]
+```
+
+AVX512 benchmark (AMR Ryzen 9959X3D with `target_cpu=x86-64-v4`):
+```
+bytes/Rng/1048576       time:   [63.537 µs 63.649 µs 63.772 µs]
+                        thrpt:  [15.313 GiB/s 15.343 GiB/s 15.370 GiB/s]
+bytes/RngWide/1048576   time:   [13.086 µs 13.100 µs 13.115 µs]
+                        thrpt:  [74.459 GiB/s 74.549 GiB/s 74.629 GiB/s]
+```
 
 The nightly only feature `unstable_simd` uses the `core::simd` crate to implement the wide generator.
 
-SSE2 benchmark:
-```
-bytes/Rng/1048576       time:   [73.299 µs 73.359 µs 73.437 µs]
-                        thrpt:  [13.298 GiB/s 13.312 GiB/s 13.323 GiB/s]
-bytes/RngWide/1048576   time:   [63.837 µs 63.998 µs 64.245 µs]
-                        thrpt:  [15.201 GiB/s 15.259 GiB/s 15.298 GiB/s]
-```
-
-AVX2 benchmark:
-```
-bytes/Rng/1048576       time:   [74.062 µs 74.253 µs 74.519 µs]
-                        thrpt:  [13.105 GiB/s 13.152 GiB/s 13.186 GiB/s]
-bytes/RngWide/1048576   time:   [35.187 µs 35.266 µs 35.375 µs]
-                        thrpt:  [27.606 GiB/s 27.691 GiB/s 27.754 GiB/s]
-```
-
-AVX512 benchmark (AMD Ryzen 9 7950X) with `RUSTFLAGS=target-cpu=native` and `--features=unstable_simd`
+AVX512 benchmark (AMD Ryzen 9 7950X with `target-cpu=native` and `--features=unstable_simd`)
 ```
 unstable_simd/u64x8/1024 time:   [921.92 ns 924.39 ns 926.89 ns]
                         thrpt:  [8.8381 Gelem/s 8.8621 Gelem/s 8.8858 Gelem/s]
@@ -88,22 +96,26 @@ unstable_simd/fill_bytes/1048576
                         thrpt:  [64.167 GiB/s 64.216 GiB/s 64.262 GiB/s]
 ```
 
-## rustflags:
+## Improving performance
+
 To enable native CPU optimizations like AVX512, include the following in your `.cargo/config.toml` file:
+
 ```toml
 [build]
 rustflags = ["-Ctarget-cpu=x86-64-v4"]
 ```
 Or set it as an environment variable `RUSTFLAGS="-C target-cpu=x86-64-v4"`.
 
-You can query which `target-cpu` is supported with `/lib64/ld-linux-x86-64.so.2 --help`.
+You can query which `target-cpu` is supported with `/lib64/ld-linux-x86-64.so.2 --help`:
+
 - `x86-64-v3` (AVX2)
 - `x86-64-v4` (AVX512)
 
 This can improve SIMD enabled `RngWide` performance by up to 235% when the `unstable_simd` feature is enabled,
-leveraging AVX512 on supported platforms.
-But it can also lead to regression of various function, including `Rng::mod_usize` for example by 300%.
-Always benchmark your concrete implementation with `-Ctarget-cpu=x86-64-v4` flag enabled or disabled.
+leveraging AVX512 on supported platforms. But it can also lead to regression of various function, including
+`Rng::mod_usize` for example by 300%.
+
+Always benchmark your concrete implementation with your `target-cpu` flag enabled or disabled.
 
 ## Features
 

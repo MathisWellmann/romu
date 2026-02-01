@@ -198,26 +198,29 @@ pub fn range(c: &mut Criterion) {
 pub fn bytes(c: &mut Criterion) {
     let mut group = c.benchmark_group("bytes");
 
-    let rng = Rng::new();
+    for size in [128, 1024, 1024 * 1024] {
+        group.throughput(Throughput::Bytes(size as u64));
 
-    let size = 1024 * 1024; // 1 MiB
-    group.throughput(Throughput::Bytes(size as u64));
+        group.bench_with_input(BenchmarkId::new("Rng", size), &size, |b, &size| {
+            b.iter_with_setup(
+                || (Rng::new(), vec![0u8; size]),
+                |(rng, mut buffer)| {
+                    rng.fill_bytes(&mut buffer);
+                    black_box(buffer);
+                },
+            );
+        });
 
-    let mut buffer = vec![0u8; size];
-
-    group.bench_with_input(BenchmarkId::new("Rng", size), &size, |b, &_s| {
-        b.iter(|| rng.fill_bytes(&mut buffer));
-    });
-    black_box(buffer);
-
-    let mut rng = RngWide::new();
-
-    let mut buffer = vec![0u8; size];
-
-    group.bench_with_input(BenchmarkId::new("RngWide", size), &size, |b, &_s| {
-        b.iter(|| rng.fill_bytes(&mut buffer));
-    });
-    black_box(buffer);
+        group.bench_with_input(BenchmarkId::new("RngWide", size), &size, |b, &size| {
+            b.iter_with_setup(
+                || (RngWide::new(), vec![0u8; size]),
+                |(mut rng, mut buffer)| {
+                    rng.fill_bytes(&mut buffer);
+                    black_box(buffer);
+                },
+            );
+        });
+    }
 
     group.finish();
 }
@@ -306,9 +309,9 @@ pub fn benches() {
     scalar(&mut criterion);
     mod_u(&mut criterion);
     range(&mut criterion);
-    bytes(&mut criterion);
     #[cfg(feature = "tls")]
     tls(&mut criterion);
+    bytes(&mut criterion);
     #[cfg(feature = "unstable_simd")]
     unstable_simd(&mut criterion);
 }
