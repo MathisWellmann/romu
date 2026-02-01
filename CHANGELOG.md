@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## Changed
 
 - Changed `RngWide::u64x8()` return type to `u64x8` by @MathisWellmann (#6)
+- Improve performance of RngWide::fill_bytes in unstable_simd.rs by @MathisWellmann (#10)
 
 ### Updated
 
