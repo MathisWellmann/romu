@@ -6,6 +6,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## Changed
+
+- Changed `RngWide::u64x8()` return type to `u64x8` by @MathisWellmann (#6)
+
 ## [0.7.0] - 2025-08-21
 
 ### Added
