@@ -170,19 +170,29 @@ impl RngWide {
     pub fn fill_bytes(&mut self, slice: &mut [u8]) {
         const CHUNK_SIZE: usize = 8 * size_of::<u64>();
 
-        let mut chunks = slice.chunks_exact_mut(CHUNK_SIZE);
-        for chunk in &mut chunks {
-            let data: [u8; CHUNK_SIZE] = unsafe { transmute(self.u64x8()) };
-            chunk.copy_from_slice(&data)
+        let rem = slice.len() % CHUNK_SIZE;
+        let fst_len = slice.len() - rem;
+        let loops = fst_len / CHUNK_SIZE;
+        let mut dst = slice.as_mut_ptr();
+        for _ in 0..loops {
+            let next: u64x8 = self.next();
+            // SAFETY: destination capacity is guaranteed as well as index bounds
+            unsafe {
+                std::ptr::copy_nonoverlapping(
+                    next.as_array().as_ptr() as *const u8,
+                    dst,
+                    CHUNK_SIZE,
+                );
+                dst = dst.add(CHUNK_SIZE);
+            }
         }
 
-        debug_assert_eq!(size_of::<[u8; CHUNK_SIZE]>(), size_of::<[u64; 8]>());
-        let data: [u8; CHUNK_SIZE] = unsafe { transmute(self.u64x8()) };
-        chunks
-            .into_remainder()
-            .iter_mut()
-            .enumerate()
-            .for_each(|(i, x)| *x = data[i]);
+        if rem != 0 {
+            // Fill the remaining slots.
+            debug_assert_eq!(size_of::<[u8; CHUNK_SIZE]>(), size_of::<[u64; 8]>());
+            let data: [u8; CHUNK_SIZE] = unsafe { transmute(self.u64x8()) };
+            slice[fst_len..].copy_from_slice(&data[..rem]);
+        }
     }
 }
 
