@@ -78,6 +78,29 @@ bytes/RngWide/1048576   time:   [35.187 µs 35.266 µs 35.375 µs]
                         thrpt:  [27.606 GiB/s 27.691 GiB/s 27.754 GiB/s]
 ```
 
+AVX512 benchmark (AMD Ryzen 9 7950X) with `RUSTFLAGS=target-cpu=native` and `--features=unstable_simd`
+```
+bytes/RngWide/1048576   time:   [15.291 µs 15.304 µs 15.316 µs]
+                        thrpt:  [63.761 GiB/s 63.809 GiB/s 63.864 GiB/s]
+```
+
+## rustflags:
+To enable native CPU optimizations like AVX512, include the following in your `.cargo/config.toml` file:
+```toml
+[build]
+rustflags = ["-Ctarget-cpu=x86-64-v4"]
+```
+Or set it as an environment variable `RUSTFLAGS="-C target-cpu=x86-64-v4"`.
+
+You can query which `target-cpu` is supported with `/lib64/ld-linux-x86-64.so.2 --help`.
+- `x86-64-v3` (AVX2)
+- `x86-64-v4` (AVX512)
+
+This can improve SIMD enabled `RngWide` performance by up to 235% when the `unstable_simd` feature is enabled,
+leveraging AVX512 on supported platforms.
+But it can also lead to regression of various function, including `Rng::mod_usize` for example by 300%.
+Always benchmark your concrete implementation with `-Ctarget-cpu=x86-64-v4` flag enabled or disabled.
+
 ## Features
 
 The crate is `no_std` compatible.
