@@ -185,3 +185,29 @@ impl RngWide {
             .for_each(|(i, x)| *x = data[i]);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn unstable_simd_fill_bytes() {
+        let mut rng = RngWide::from_seed_with_64bit([0, 1, 2, 3, 4, 5, 6, 7]);
+
+        let mut buf = vec![0];
+        rng.fill_bytes(&mut buf);
+        assert_eq!(buf, vec![175]);
+
+        let mut buf = vec![0; 8];
+        rng.fill_bytes(&mut buf);
+        assert_eq!(buf, vec![37, 39, 185, 157, 84, 66, 204, 193]);
+
+        let mut buf = vec![0; 10];
+        rng.fill_bytes(&mut buf);
+        assert_eq!(buf, vec![204, 125, 231, 26, 243, 227, 70, 65, 94, 67]);
+
+        let mut buf = Vec::<u8>::new();
+        rng.fill_bytes(&mut buf);
+        assert_eq!(buf, Vec::new());
+    }
+}
