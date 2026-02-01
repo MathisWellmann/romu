@@ -1,6 +1,6 @@
 use std::hint::black_box;
 
-use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion, Throughput};
+use criterion::{criterion_main, BenchmarkId, Criterion, Throughput};
 use romu::{Rng, RngWide};
 
 pub fn scalar(c: &mut Criterion) {
@@ -266,9 +266,33 @@ pub fn tls(c: &mut Criterion) {
     group.finish();
 }
 
-#[cfg(feature = "tls")]
-criterion_group!(benches, scalar, mod_u, range, bytes, tls);
-#[cfg(not(feature = "tls"))]
-criterion_group!(benches, scalar, mod_u, range, bytes);
+#[cfg(feature = "unstable_simd")]
+pub fn unstable_simd(c: &mut Criterion) {
+    let mut group = c.benchmark_group("unstable_simd");
+    let size = 1024 * 1024; // 1 MiB
+    group.throughput(Throughput::Bytes(size as u64));
+
+    let mut rng = RngWide::new();
+
+    let mut buffer = vec![0u8; size];
+
+    group.bench_with_input(BenchmarkId::new("fill_bytes", size), &size, |b, &_s| {
+        b.iter(|| rng.fill_bytes(&mut buffer));
+    });
+    black_box(buffer);
+    group.finish();
+}
+
+pub fn benches() {
+    let mut criterion: Criterion<_> = Criterion::default().configure_from_args();
+    scalar(&mut criterion);
+    mod_u(&mut criterion);
+    range(&mut criterion);
+    bytes(&mut criterion);
+    #[cfg(feature = "tls")]
+    tls(&mut criterion);
+    #[cfg(feature = "unstable_simd")]
+    unstable_simd(&mut criterion);
+}
 
 criterion_main!(benches);
