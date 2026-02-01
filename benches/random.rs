@@ -269,13 +269,31 @@ pub fn tls(c: &mut Criterion) {
 #[cfg(feature = "unstable_simd")]
 pub fn unstable_simd(c: &mut Criterion) {
     let mut group = c.benchmark_group("unstable_simd");
-    let size = 1024 * 1024; // 1 MiB
-    group.throughput(Throughput::Bytes(size as u64));
 
+    for n in [128, 1024, 1024 * 1024] {
+        const N_ELEMS_PER_NEXT: u64 = 8; // Output of `next` is `u64x8`
+        group.throughput(Throughput::ElementsAndBytes {
+            elements: n * N_ELEMS_PER_NEXT,
+            bytes: n * size_of::<u64>() as u64 * N_ELEMS_PER_NEXT,
+        });
+        group.bench_with_input(BenchmarkId::new("u64x8", n), &n, |b, &_s| {
+            b.iter_with_setup(
+                || RngWide::new(),
+                |mut rng| {
+                    for _ in 0..n {
+                        let _ = black_box(rng.u64x8());
+                    }
+                    black_box(rng);
+                },
+            );
+        });
+    }
+
+    let size = 1024 * 1024; // 1 MiB
+    let mut buffer = vec![0u8; size];
     let mut rng = RngWide::new();
 
-    let mut buffer = vec![0u8; size];
-
+    group.throughput(Throughput::Bytes(size as u64));
     group.bench_with_input(BenchmarkId::new("fill_bytes", size), &size, |b, &_s| {
         b.iter(|| rng.fill_bytes(&mut buffer));
     });

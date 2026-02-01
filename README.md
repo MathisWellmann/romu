@@ -80,8 +80,12 @@ bytes/RngWide/1048576   time:   [35.187 µs 35.266 µs 35.375 µs]
 
 AVX512 benchmark (AMD Ryzen 9 7950X) with `RUSTFLAGS=target-cpu=native` and `--features=unstable_simd`
 ```
-bytes/RngWide/1048576   time:   [15.291 µs 15.304 µs 15.316 µs]
-                        thrpt:  [63.761 GiB/s 63.809 GiB/s 63.864 GiB/s]
+unstable_simd/u64x8/1024 time:   [921.92 ns 924.39 ns 926.89 ns]
+                        thrpt:  [8.8381 Gelem/s 8.8621 Gelem/s 8.8858 Gelem/s]
+                        thrpt:  [65.849 GiB/s 66.028 GiB/s 66.204 GiB/s]
+unstable_simd/fill_bytes/1048576
+                        time:   [15.197 µs 15.208 µs 15.219 µs]
+                        thrpt:  [64.167 GiB/s 64.216 GiB/s 64.262 GiB/s]
 ```
 
 ## rustflags:
